@@ -1,0 +1,14 @@
+# Ignore folders
+"Documentation (old)"/
+"Files Repo (do not touch only copy)"/
+ocr_sandbox/Results/
+ocr_sandbox/marker/docs_to_write_on/
+"ocr_sandbox/marker/old jsons"/
+ocr_sandbox/marker/split_pdf/
+
+*.pdf
+*.doc
+*.docx
+*.json
+
+.env
