@@ -2,3 +2,4 @@ marker-pdf==1.9.1
 pandas==2.3.2
 dotenv==0.9.9
 pymupdf==1.26.4
+-r requirements_torch.txt
