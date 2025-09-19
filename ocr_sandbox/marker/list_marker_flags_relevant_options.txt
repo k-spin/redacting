@@ -1,0 +1,165 @@
+(redact) PS C:\Users\kspin> marker_single --help
+Usage: marker_single [OPTIONS] FPATH
+
+  Convert a single PDF to markdown.
+
+Options:
+  --disable_tqdm                  Disable tqdm progress bars. Default is
+                                  False. (Applies to: LayoutBuilder,
+                                  LineBuilder, OcrBuilder, EquationProcessor,
+                                  LLMComplexRegionProcessor,
+                                  LLMEquationProcessor, LLMFormProcessor,
+                                  LLMHandwritingProcessor,
+                                  LLMImageDescriptionProcessor,
+                                  LLMMathBlockProcessor,
+                                  LLMSimpleBlockMetaProcessor,
+                                  LLMPageCorrectionProcessor,
+                                  LLMSectionHeaderProcessor,
+                                  LLMTableProcessor, LLMTableMergeProcessor,
+                                  TableProcessor, DocumentExtractor,
+                                  PageExtractor)
+  --keep_chars                    Keep individual characters. Default is
+                                  False. (Applies to: LineBuilder, OcrBuilder,
+                                  DocumentProvider, PdfProvider, EpubProvider,
+                                  HTMLProvider, PowerPointProvider,
+                                  SpreadSheetProvider)
+  --recognition_batch_size INTEGER
+                                  The batch size to use for the recognition
+                                  model. Default is None, which will use the
+                                  default batch size for the model. (Applies
+                                  to: OcrBuilder, TableProcessor)
+  --ocr_task_name TEXT            The OCR mode to use, see surya for details.
+                                  Set to 'ocr_without_boxes' for potentially
+                                  better performance, at the expense of
+                                  formatting. Default is ocr_with_boxes.
+                                  (Applies to: OcrBuilder)
+  --disable_ocr_math              Disable inline math recognition in OCR
+                                  Default is False. (Applies to: OcrBuilder,
+                                  TableProcessor)
+  --drop_repeated_text            Drop repeated text in OCR results. Default
+                                  is False. (Applies to: OcrBuilder,
+                                  EquationProcessor)
+  --block_mode_intersection_thresh FLOAT
+                                  Max intersection before falling back to line
+                                  mode Default is 0.5. (Applies to:
+                                  OcrBuilder)
+  --block_mode_max_lines INTEGER  Max lines within a block before falling back
+                                  to line mode Default is 15. (Applies to:
+                                  OcrBuilder)
+  --block_mode_max_height_frac FLOAT
+                                  Max height of a block as a percentage of the
+                                  page before falling back to line mode
+                                  Default is 0.5. (Applies to: OcrBuilder)
+
+  --use_llm                       Whether to use LLMs to improve accuracy.
+                                  Default is False. (Applies to:
+                                  LineMergeProcessor,
+                                  LLMComplexRegionProcessor,
+                                  LLMEquationProcessor, LLMFormProcessor,
+                                  LLMHandwritingProcessor,
+                                  LLMImageDescriptionProcessor,
+                                  LLMMathBlockProcessor,
+                                  LLMSimpleBlockMetaProcessor,
+                                  LLMPageCorrectionProcessor,
+                                  LLMSectionHeaderProcessor,
+                                  LLMTableProcessor, LLMTableMergeProcessor,
+                                  ExtractionConverter, PdfConverter,
+                                  OCRConverter, TableConverter)
+
+  --extract_images BOOLEAN        Extract images from the document. Default is
+                                  True. (Applies to:
+                                  LLMImageDescriptionProcessor, ChunkRenderer,
+                                  JSONRenderer, ExtractionRenderer,
+                                  HTMLRenderer, MarkdownRenderer,
+                                  OCRJSONRenderer)
+
+  --force_ocr                     Whether to force OCR on the whole document.
+                                  Default is False. (Applies to:
+                                  DocumentProvider, PdfProvider, EpubProvider,
+                                  HTMLProvider, PowerPointProvider,
+                                  SpreadSheetProvider)
+
+  --strip_existing_ocr            Whether to strip existing OCR text from the
+                                  PDF. Default is False. (Applies to:
+                                  DocumentProvider, PdfProvider, EpubProvider,
+                                  HTMLProvider, PowerPointProvider,
+                                  SpreadSheetProvider)
+
+  --keep_pageheader_in_output     Keep the page header in the output HTML.
+                                  Default is False. (Applies to:
+                                  ChunkRenderer, JSONRenderer,
+                                  ExtractionRenderer, HTMLRenderer,
+                                  MarkdownRenderer, OCRJSONRenderer)
+  --keep_pagefooter_in_output     Keep the page footer in the output HTML.
+                                  Default is False. (Applies to:
+                                  ChunkRenderer, JSONRenderer,
+                                  ExtractionRenderer, HTMLRenderer,
+                                  MarkdownRenderer, OCRJSONRenderer)
+  --add_block_ids                 Whether to add block IDs to the output HTML.
+                                  Default is False. (Applies to:
+                                  ChunkRenderer, JSONRenderer,
+                                  ExtractionRenderer, HTMLRenderer,
+                                  MarkdownRenderer, OCRJSONRenderer)
+
+  --DocumentBuilder_highres_image_dpi INTEGER
+                                  DPI setting for high-resolution page images
+                                  used for OCR. Default is 192.
+  --DocumentBuilder_disable_ocr   Disable OCR processing. Default is False.
+
+  --OcrBuilder_recognition_batch_size INTEGER
+                                  The batch size to use for the recognition
+                                  model. Default is None, which will use the
+                                  default batch size for the model.
+  --OcrBuilder_disable_tqdm       Disable tqdm progress bars. Default is
+                                  False.
+  --OcrBuilder_ocr_task_name TEXT
+                                  The OCR mode to use, see surya for details.
+                                  Set to 'ocr_without_boxes' for potentially
+                                  better performance, at the expense of
+                                  formatting. Default is ocr_with_boxes.
+  --OcrBuilder_keep_chars         Keep individual characters. Default is
+                                  False.
+  --OcrBuilder_disable_ocr_math   Disable inline math recognition in OCR
+                                  Default is False.
+  --OcrBuilder_drop_repeated_text
+                                  Drop repeated text in OCR results. Default
+                                  is False.
+  --OcrBuilder_block_mode_intersection_thresh FLOAT
+                                  Max intersection before falling back to line
+                                  mode Default is 0.5.
+  --OcrBuilder_block_mode_max_lines INTEGER
+                                  Max lines within a block before falling back
+                                  to line mode Default is 15.
+  --OcrBuilder_block_mode_max_height_frac FLOAT
+                                  Max height of a block as a percentage of the
+                                  page before falling back to line mode
+                                  Default is 0.5.
+
+  --DebugProcessor_debug_data_folder TEXT
+                                  The folder to dump debug data to. Default is
+                                  debug_data.
+  --DebugProcessor_debug_layout_images
+                                  Whether to dump layout debug images. Default
+                                  is False.
+  --DebugProcessor_debug_pdf_images
+                                  Whether to dump PDF debug images. Default is
+                                  False.
+  --DebugProcessor_debug_json     Whether to dump block debug data. Default is
+                                  False.
+  
+  --OCRConverter_use_llm          Enable higher quality processing with LLMs.
+                                  Default is False.
+ 
+
+  --OCRJSONRenderer_extract_images BOOLEAN
+                                  Extract images from the document. Default is
+                                  True.
+  --OCRJSONRenderer_keep_pageheader_in_output
+                                  Keep the page header in the output HTML.
+                                  Default is False.
+  --OCRJSONRenderer_keep_pagefooter_in_output
+                                  Keep the page footer in the output HTML.
+                                  Default is False.
+  --OCRJSONRenderer_add_block_ids
+                                  Whether to add block IDs to the output HTML.
+                                  Default is False.
