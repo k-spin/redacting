@@ -1,18 +1,29 @@
 import re
+import objects
+from objects import markerObject
 from bs4 import BeautifulSoup
 import pathlib
 import pandas as pd
 import numpy as np
-
+from typing import Optional
+from typing import Union
 
 
 
 def clean_text(inputhtml: str) -> str:
-  return re.sub('[.]{2,}',"",BeautifulSoup(inputhtml, "html.parser").get_text(strip=True))
 
-def bbox_to_coords(bbox: list) -> list:
-   return [(bbox[0],bbox[1]),(bbox[2],bbox[1]),(bbox[2],bbox[3]),(bbox[0],bbox[3])]
+    clean_text = re.sub('[.]{2,}',"",BeautifulSoup(inputhtml, "html.parser").get_text(strip=True))
+    # print(f"|{clean_text}|")
 
+    return clean_text
+
+
+def add_whitespace(inptext: str) -> str:
+
+    if inptext[-1] != " ":   # this is here to add a space at the end of each sentence, so as to avoid adding spaces later for NER and messing up the offsets. see about removing or modifying this
+        plus_space = inptext + " "
+    else: plus_space = inptext
+    return plus_space
 
 
 def ocr_retrieve_specific_boxes_and_flatten(treelist:list[dict],pull_polygons:list[str],pull_text:list[str]) -> tuple:
@@ -74,20 +85,233 @@ def ocr_retrieve_specific_boxes_and_flatten(treelist:list[dict],pull_polygons:li
 
 
 
-def transform_to_table(filename:pathlib.Path,filetext: dict[dict],filebox:dict[dict]) -> pd.DataFrame:
 
 
+def retrieve_specified(treelist:list[dict],pull_category:list[str]) -> Union[dict[str:markerObject],dict[str:tuple]]:
+
+    text_objects = ['Line','Text','TextInlineMath','Caption','ListItem','SectionHeader','TableCell', 'PageFooter','PageHeader']
+    # text_objects = [item for item in text_objects if item in pull_category]
+
+    if pull_category==None:
+        raise TypeError("No categories to pull from!")
+    if 'Page' not in pull_category:
+        pull_category.append('Page')
+
+    objects_dict = {}
+  
+    for item in treelist:
+        # print(item['id'])
+        item_cat = item['block_type']
+        newobject = {}
+
+
+        try:    # check if this is a Char
+            if item['children']:
+                pass
+        except:
+            if item_cat == 'Char':
+                objects_dict.update({item['id']:(item['text'],item['bbox'])})
+                continue
+            else: raise TypeError(f"Item {item['id']} of type {item_cat} has no children and isn't a Char, please investigate...")
+
+
+        if item['children']:
+            if item_cat == 'Page':
+                    retr_objects = retrieve_specified(item['children'],pull_category)
+                    newobject.update(retr_objects)
+                    newobject = {int(re.search(r"/page/(\d+)/", item['id']).group(1)):newobject}
+            
+            elif item_cat in pull_category:
+                if item_cat in text_objects:
+                    if item['html']:
+                        retr_objects = retrieve_specified(item['children'],pull_category)
+                        print(item['html'])
+                        nodetext = clean_text(item['html'])     # NOT SURE THIS IS HOW WE WANT TO DO THIS
+                        print(nodetext)
+                        if nodetext: nodetext = add_whitespace(nodetext)
+
+                        if all(isinstance(v,tuple) for v in retr_objects.values()):
+                            chars,charcoords = (list(v) for v in zip(*retr_objects.values()))
+                            print(chars)
+                            print(charcoords)
+                            newobject.update({item['id']:markerObject(item['id'],item['bbox'],nodetext,item_cat,chars,charcoords)})
+                        else:
+                            newobject.update({item['id']:markerObject(item['id'],item['bbox'],nodetext,item_cat)})
+                            newobject.update(retr_objects)
+                    else:
+                        continue
+                else:
+                    retr_objects = retrieve_specified(item['children'],pull_category)
+                    newobject.update({item['id']:markerObject(item['id'],item['bbox'],item_cat)})
+                    newobject.update(retr_objects)
+
+            else:
+                retr_objects = retrieve_specified(item['children'],pull_category)
+                newobject.update(retr_objects)
+
+
+        else:   #this means we're in a leaf node
+
+            if item_cat in pull_category:
+                if item_cat in text_objects:
+                    if item['html']:
+                        leaftext = clean_text(item['html'])
+                        if not leaftext:   continue  # this is here to clean out any empty strings. if anything causes an issue down the line, it'll be this. removed items *should* be read lines that consist solely of dots
+                        else: leaftext = add_whitespace(leaftext) # this is here to add a space at the end of each sentence, so as to avoid adding spaces later for NER and messing up the offsets. see about removing or modifying this
+                        leafcoords = item['bbox']
+                        newobject = {item['id']:markerObject(item['id'],leafcoords,leaftext,item_cat)}
+                    else:
+                        continue
+
+                else:
+                    leafcoords = item['bbox']
+                    newobject.update({item['id']:markerObject(item['id'],leafcoords,item_cat)})     # can add text extraction here anyways, but being really careful about it
+
+            else:
+                continue
+
+
+
+        objects_dict.update(newobject)
+    return objects_dict
+
+
+
+
+
+
+
+
+def retrieve_parents_and_children(treelist:list[dict], pull_category: list[str]) -> dict[str:markerObject]:
+
+    if pull_category is None:
+        raise TypeError("No categories to pull from!")
+    
+    if 'Page' not in pull_category:
+        pull_category.append('Page')
+
+    objects_dict = {}
+
+    # for item in treelist:
+    #     item_cat = item['block_type']
+    #     newobject = {}
+
+    #     if item['children']:
+
+
+
+            
+
+
+
+
+    #         pass
+
+    #     else:
+
+    #         pass
+    
+    print("Not yet implemented...")
+    return {markerObject("None",[None,None,None,None])}
+
+
+
+
+def retrieve_all_leaves(treelist:list[dict]) -> dict[str:markerObject]:
+    print("Not yet implemented...")
+    return {markerObject("None",[None,None,None,None])}
+
+def retrieve_all_objects(treelist:list[dict]) -> dict[str:markerObject]:
+    print("Not yet implemented...")
+    return {markerObject("None",[None,None,None,None])}
+
+
+def retrieve_from_marker_output(treelist:list[dict], pull_category: Optional[list[str]], mode:Optional[str]='all') -> dict[str:markerObject]:
+    """Contains the variants of functions that retrieve items from the marker-pdf outputs. Currently contains, in order
+    of how strictly we adhere to the demanded categories:
+    - retrieve_all_objects: retrieves every single object in the marker-output; disregards any demanded categories
+    - retrieve_all_leaves: retrieves all leaves irrespective of their parent; disregards any demanded categories
+    - retrieve_parents_and_children: retrieves demanded categories of parent nodes, and all their children irrespective of demanded categories
+    - retrieve_specified: retrieves only demanded categories. Note that a child
+
+    :param treelist: List of JSON files read into python, output of marker-pdf.
+                     Also takes JSON formats returned from the marker OCRConverter 
+                     with the --keep-chars flag active
+    :type treelist: list[dict]
+
+    :param pull_category: List of names ('block_type') of objects generated by marker-pdf 
+        from which you want to retrieve information. These are pulled from the treelist 
+        argument, and returned in a markerObject format
+    :type pull_category: list[str], optional
+
+    :param mode: string indicating which of the three retrieval modes to use; 
+        accepted arguments are 'all_leaves', 'spec_parents', 'specified'; 
+        defaults to 'all' if no mode is specified
+    :type mode: str, optional
+    """
+
+    retrievers = {"all":retrieve_all_objects, "leaves":retrieve_all_leaves, "parent-child":retrieve_parents_and_children, "specified":retrieve_specified}
+    
+    if mode is None:
+        print("No retrieval mode specified. Defaulting to 'all'...")
+    else:
+        print(f"Using mode '{mode}' to retrieve from marker object")
+
+    if mode in ['parent-child','specified']:
+        if pull_category is None:
+            raise TypeError(f"Cannot use mode {mode} without defining list of items to retrieve (No pull_categopry passed as argument)")
+        else:
+            objects_dict = retrievers[mode](treelist,pull_category)
+    else:
+        objects_dict = retrievers[mode](treelist)
+    
+    return objects_dict
+
+
+
+
+
+
+
+
+
+
+
+def transform_to_table(filetext: dict[dict],filebox:dict[dict], char_mode:bool = False) -> pd.DataFrame:
 
 
     #NOTE SOS: Since we are doing a join and adding one whitespace, we need to take it into account when counting the sentence length in the OG datatable, so EACH
     # row's totlength is increased by 1 to account for this and match up with the syntok tokens later, hence the +1 in totlength
 
-    build_df = pd.concat([pd.DataFrame({'page' : [pagetext[0] for identifier in pagetext[1].keys()],
-                                        'line' : [int(re.search(r"/page/[\d+]/Line/(\d+)", identifier).group(1)) for identifier in pagetext[1].keys()],
-                                        'length' : [len(readline) for readline in pagetext[1].values()],
-                                        'totlength' :  np.cumsum([len(readline)+1 for readline in pagetext[1].values()]).tolist(),
-                                        'text' : [readline for readline in pagetext[1].values()],
-                                        'coordinates' : [box for box in pagebox.values()]
-                                        }) for pagetext,pagebox in zip(filetext.items(),filebox.values())], ignore_index=True)
-    
+    if char_mode:
+    #     # assume we are given marker return of --keep-chars flag. These contain no Line information but Char information instead
+    #     # 
+
+    #     pd.DataFrame([ {'page': item[page], 'line':item[line], "char_index":item[indx]} for item in x])
+
+
+
+    #     build_df = pd.concat([pd.DataFrame({'page' : [pagetext[0] for identifier in filetext[page].items()   ],
+    #                                     'line' : [int(re.search(r"/page/[\d+]/Char/(\d+)", identifier).group(1)) for identifier in pagetext[1].keys()],
+    #                                     'length' : [len(readline) for readline in pagetext[1].values()],
+    #                                     'totlength' :  np.cumsum([len(readline) for readline in pagetext[1].values()]).tolist(),
+    #                                     'text' : [readline for readline in pagetext[1].values()],
+    #                                     'coordinates' : [box for box in pagebox.values()]
+    #                                     }) for page in range(many_pages)], ignore_index=True)
+        ...
+    else:
+    #default, Line mode
+        build_df = pd.concat([pd.DataFrame({'page' : [pagetext[0] for identifier in pagetext[1].keys()],
+                                            'line' : [int(re.search(r"/page/[\d+]/Line/(\d+)", identifier).group(1)) for identifier in pagetext[1].keys()],
+                                            'length' : [len(readline) for readline in pagetext[1].values()],
+                                            'totlength' :  np.cumsum([len(readline)+1 for readline in pagetext[1].values()]).tolist(),
+                                            'text' : [readline for readline in pagetext[1].values()],
+                                            'coordinates' : [box for box in pagebox.values()]
+                                            }) for pagetext,pagebox in zip(filetext.items(),filebox.values())], ignore_index=True)
+
+    # many_pages = len()
+    # [for page in range(many_pages)]
+
+
+    # build_df = pd.DataFrame({})
     return build_df

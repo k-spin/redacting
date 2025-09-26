@@ -63,3 +63,25 @@ def add_boxes(filename, annotations):
   doc.close()
   page=None
   print(f'"{filename.stem}" annotated.')
+
+
+
+def add_char_boxes(filename, annotations):
+
+  doc = check_ok_to_write(filename)
+  
+  for i,page in enumerate(doc):
+
+    lines = annotations[i]
+    nannots = len(lines)
+    for ncoord,coords in enumerate(lines):
+      numcoords = len(coords)
+      for nchar,char in enumerate(coords):
+        print(f"Page {i}: Adding annotation line {ncoord}/{nannots} character {nchar} / {numcoords}",end='\r')
+        annot = page.add_polygon_annot(bbox_to_coords(char))
+        annot.set_colors(stroke=(0.0431, 0.5882, 0.2509))
+        annot.update()
+        doc.saveIncr()
+  doc.close()
+  page=None
+  print(f'"{filename.stem}" annotated.')
