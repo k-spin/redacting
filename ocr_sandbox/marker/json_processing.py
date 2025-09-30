@@ -9,7 +9,6 @@ from typing import Optional
 from typing import Union
 
 
-
 def clean_text(inputhtml: str) -> str:
 
     clean_text = re.sub('[.]{2,}',"",BeautifulSoup(inputhtml, "html.parser").get_text(strip=True))
@@ -156,7 +155,8 @@ def retrieve_specified(treelist:list[dict],pull_category:list[str]) -> Union[dic
                 if item_cat in text_objects:
                     if item['html']:
                         leaftext = clean_text(item['html'])
-                        if not leaftext:   continue  # this is here to clean out any empty strings. if anything causes an issue down the line, it'll be this. removed items *should* be read lines that consist solely of dots
+                        if not leaftext:   continue  # this is here to clean out any empty strings. if anything causes an issue down the line, it'll be this. removed items *should* be read lines that consist solely of dots.
+                                                     # alternative idea: keep, and when printing, if text null/empty, use different color for annotatingi
                         else: leaftext = add_whitespace(leaftext) # this is here to add a space at the end of each sentence, so as to avoid adding spaces later for NER and messing up the offsets. see about removing or modifying this
                         leafcoords = item['bbox']
                         newobject = {item['id']:markerObject(item['id'],leafcoords,leaftext,item_cat)}
@@ -277,41 +277,54 @@ def retrieve_from_marker_output(treelist:list[dict], pull_category: Optional[lis
 
 
 
-def transform_to_table(filetext: dict[dict],filebox:dict[dict], char_mode:bool = False) -> pd.DataFrame:
+def transform_to_table(file_objects: dict[int:dict[str:markerObject]],filetext: dict[dict]=None,filebox:dict[dict]=None, char_mode:bool = False) -> pd.DataFrame:
 
-
+    text_objects = ['Line','Text','TextInlineMath','Caption','ListItem','SectionHeader','TableCell', 'PageFooter','PageHeader']
     #NOTE SOS: Since we are doing a join and adding one whitespace, we need to take it into account when counting the sentence length in the OG datatable, so EACH
     # row's totlength is increased by 1 to account for this and match up with the syntok tokens later, hence the +1 in totlength
 
-    if char_mode:
-    #     # assume we are given marker return of --keep-chars flag. These contain no Line information but Char information instead
-    #     # 
+    # if char_mode:
+    # #     # assume we are given marker return of --keep-chars flag. These contain no Line information but Char information instead
+    # #     # 
 
-    #     pd.DataFrame([ {'page': item[page], 'line':item[line], "char_index":item[indx]} for item in x])
+    # #     pd.DataFrame([ {'page': item[page], 'line':item[line], "char_index":item[indx]} for item in x])
 
 
 
-    #     build_df = pd.concat([pd.DataFrame({'page' : [pagetext[0] for identifier in filetext[page].items()   ],
-    #                                     'line' : [int(re.search(r"/page/[\d+]/Char/(\d+)", identifier).group(1)) for identifier in pagetext[1].keys()],
-    #                                     'length' : [len(readline) for readline in pagetext[1].values()],
-    #                                     'totlength' :  np.cumsum([len(readline) for readline in pagetext[1].values()]).tolist(),
-    #                                     'text' : [readline for readline in pagetext[1].values()],
-    #                                     'coordinates' : [box for box in pagebox.values()]
-    #                                     }) for page in range(many_pages)], ignore_index=True)
-        ...
-    else:
-    #default, Line mode
-        build_df = pd.concat([pd.DataFrame({'page' : [pagetext[0] for identifier in pagetext[1].keys()],
-                                            'line' : [int(re.search(r"/page/[\d+]/Line/(\d+)", identifier).group(1)) for identifier in pagetext[1].keys()],
-                                            'length' : [len(readline) for readline in pagetext[1].values()],
-                                            'totlength' :  np.cumsum([len(readline)+1 for readline in pagetext[1].values()]).tolist(),
-                                            'text' : [readline for readline in pagetext[1].values()],
-                                            'coordinates' : [box for box in pagebox.values()]
-                                            }) for pagetext,pagebox in zip(filetext.items(),filebox.values())], ignore_index=True)
+    # #     build_df = pd.concat([pd.DataFrame({'page' : [pagetext[0] for identifier in filetext[page].items()   ],
+    # #                                     'line' : [int(re.search(r"/page/[\d+]/Char/(\d+)", identifier).group(1)) for identifier in pagetext[1].keys()],
+    # #                                     'length' : [len(readline) for readline in pagetext[1].values()],
+    # #                                     'totlength' :  np.cumsum([len(readline) for readline in pagetext[1].values()]).tolist(),
+    # #                                     'text' : [readline for readline in pagetext[1].values()],
+    # #                                     'coordinates' : [box for box in pagebox.values()]
+    # #                                     }) for page in range(many_pages)], ignore_index=True)
+    #     ...
+    # else:
+    # #default, Line mode
+    #     build_df = pd.concat([pd.DataFrame({'page' : [pagetext[0] for identifier in pagetext[1].keys()],
+    #                                         'line' : [int(re.search(r"/page/[\d+]/Line/(\d+)", identifier).group(1)) for identifier in pagetext[1].keys()],
+    #                                         'length' : [len(readline) for readline in pagetext[1].values()],
+    #                                         'totlength' :  np.cumsum([len(readline)+1 for readline in pagetext[1].values()]).tolist(),
+    #                                         'text' : [readline for readline in pagetext[1].values()],
+    #                                         'coordinates' : [box for box in pagebox.values()]
+    #                                         }) for pagetext,pagebox in zip(filetext.items(),filebox.values())], ignore_index=True)
 
-    # many_pages = len()
-    # [for page in range(many_pages)]
+    #SOS NOTE: need to verify that the items are LINES and NOT ANYTHING ELSE
+    # build_df = pd.concat([pd.DataFrame({  'id':[markerobj.identifier for markerobj in file_objects[page].values()],
+    #                             'totlength' :  np.cumsum([len(markerobj) for markerobj in file_objects[page].values()]).tolist()    # NOTE: this might need to be switched to chars, or to make an if condition foe the chars case
+    #                         }) for page in range(len(file_objects))], ignore_index=True)
+    
+    build_df = pd.concat([pd.DataFrame([{   'id':markerobj.identifier,
+                                            'page': page,
+                                            'length' :  len(markerobj)   # NOTE: this might need to be switched to chars, or to make an if condition foe the chars case
+                                             } for markerobj in file_objects[page].values() if markerobj.type in text_objects]) for page in range(len(file_objects))])  # keeps ONLY text-type objects (avoids issues with None-text items?)
 
+    # build_df = pd.concat([pd.DataFrame([{   'id':markerobj.identifier,
+    #                                         'length' :  len(markerobj)   # NOTE: this might need to be switched to chars, or to make an if condition foe the chars case
+    #                                          } for markerobj in file_objects[page].values() if markerobj.type not in text_objects]) for page in range(len(file_objects))])  # keeps ONLY NON-text-type objects (avoids issues with None-text items?)
+
+    build_df['totlength'] = np.cumsum(build_df['length']).tolist()  # NOTE, need to fix this to go per page
+    build_df.drop(['length'],axis=1,inplace=True)
 
     # build_df = pd.DataFrame({})
     return build_df
