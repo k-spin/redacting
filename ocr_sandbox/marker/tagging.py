@@ -122,16 +122,12 @@ def ner_on_page(filtered_paged_offsets: pd.Series, page: int, text_to_tokenize: 
         # NOTE: NEW PLAN
         # Fuck the sentences, get lists of spans per page, and then
         # for each span, with linked lines, normalize (span start position = offset - linepos (offset table))
-        # 
+        # for tokens index, use index to get corresponding char index to get corresponding char coords (here will need some more analyzing to handle multi-line items)
+        # ++ function to merge token coords and hand back one (or multiple depending on case) set of bboxes
+        # also see about examining the claim that simply adding redaction annotations but not redacting makes the documents able to be redacted by pdf Xchnage
         new_obj = sentenceObject(text = sent_text, start_position=start_position,end_position=end_position, spans = spanlist)
         # print(repr(new_obj))
 
-            
-    # print([item for group in [[span.to_dict() for span in proc_sentence.get_spans()] for proc_sentence in flair_tok_sentences] for item in group])
-    # ner_results_table = pd.concat([pd.Series(page, index=np.arange(ner_results_table.shape[0]), name='page'), ner_results_table,ner_results_table["labels"].apply(split_dicts).apply(pd.Series)],axis=1).rename({"value":"tag","confidence":"conf"},axis=1)
-    # # display(ner_results_table)    # sanity check before dropping the labels column
-    # ner_results_table = ner_results_table.drop(columns=['labels'])
-    # return ner_results_table
     pass
 
 
