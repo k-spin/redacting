@@ -1,4 +1,5 @@
 from flair.data import Sentence
+from syntok.tokenizer import Token
 
 class markerObject:
     """A class containing all the pertinent information contained within a retrieved marker object"""
@@ -31,11 +32,33 @@ class markerObject:
 
     def get_info(self):
         return{self.identifier:(self.coords,self.text,self.type)}
-    
+
+class spanObject:
+
+    def __init__(self, identifier: int, tokens: list[Token], tag: str, linked_lines: list[str]) -> None:
+        self.idx = identifier
+        self.tokens = tokens
+        self.tag = tag
+        self.linked_lines = linked_lines
+        # add tracking of parent object (sentence)
+
+    def __repr__(self):
+        return f"<<spanObject: ID {self.idx}|| Tokens {self.tokens} | Type [{self.tag}] | Lines {self.linked_lines}>>"
+        
+    def __str__(self):
+        return f"<<spanObject: ID {self.idx}\nTokens [{self.tokens}]\nType [{self.tag}]\nLines {self.linked_lines} >>"
 
 
 class sentenceObject:
 
-    def __init__(self,sentence: Sentence,linked_lines) -> None:
-        self.sentence = sentence
-        self.linked_lines = linked_lines
+    def __init__(self, text: str,start_position: int, end_position: int, spans: list[spanObject]) -> None:
+        self.text = text
+        self.startpos = start_position
+        self.endpos = end_position
+        self.spans = spans
+    
+    def __repr__(self):
+        return f"<<sentenceObject: Interval [{self.startpos},{self.endpos}] | Spans {self.spans}>>"
+        
+    def __str__(self):
+        return f"<<sentenceObject: Interval [{self.startpos},{self.endpos}]\nSpans {self.spans}\nText [{self.text}] >>"
